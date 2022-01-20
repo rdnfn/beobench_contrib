@@ -91,3 +91,6 @@ RUN mkdir -p /opt/beobench/ \
 COPY env_creator.py /opt/beobench/experiment_setup/
 # add env creator to python path
 ENV PYTHONPATH "${PYTHONPATH}:/opt/beobench/experiment_setup/"
+
+# install beobench package
+RUN python3 -m pip --disable-pip-version-check --no-cache-dir install beobench
