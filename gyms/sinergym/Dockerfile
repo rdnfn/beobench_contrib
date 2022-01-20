@@ -72,8 +72,20 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y git
 
 # Custom beobench code
 
+# Make python 3.6 default
+RUN ln -s /usr/bin/python3.6 /usr/bin/python
+
 # Installing sinergym from GitHub
-RUN pip3 --disable-pip-version-check --no-cache-dir install git+https://github.com/jajimer/sinergym/
+#
+# Note that sinergym currently needs to be installed from cloned repo,
+# likely because sinergym's setup.py does not specify package names.
+# The -e option ensures that the entire package path is added to the
+# PYTHONPATH to address the above problem.
+RUN mkdir -p /opt/beobench/ \
+    && cd /opt/beobench/ \
+    && git clone https://github.com/jajimer/sinergym.git \
+    && cd sinergym && python3 -m pip install -e .
+
 
 # add env creator
 COPY env_creator.py /opt/beobench/experiment_setup/

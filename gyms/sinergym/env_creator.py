@@ -16,7 +16,7 @@ def create_env(env_config: dict = None) -> gym.Env:
     """
 
     if env_config is None:
-        eng_config = {"name":"Eplus-5Zone-hot-continuous-v1"}
+        env_config = {"name":"Eplus-5Zone-hot-continuous-v1"}
 
 
     # importing sinergym automatically nicely registers
