@@ -101,5 +101,5 @@ RUN python3 -m pip --disable-pip-version-check --no-cache-dir install beobench
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
 
-# Fix for missing stablebaseline dependency
+# Fix for missing stable baselines dependency
 RUN python3 -m pip --disable-pip-version-check --no-cache-dir install stable-baselines3
