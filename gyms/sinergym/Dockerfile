@@ -95,6 +95,11 @@ ENV PYTHONPATH "${PYTHONPATH}:/opt/beobench/experiment_setup/"
 # install beobench package
 RUN python3 -m pip --disable-pip-version-check --no-cache-dir install beobench
 
+# Fixes
+
 # Fix for click encoding problem
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
+
+# Fix for missing stablebaseline dependency
+RUN python3 -m pip --disable-pip-version-check --no-cache-dir install stable-baselines3
