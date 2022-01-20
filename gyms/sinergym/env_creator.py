@@ -32,11 +32,11 @@ def create_env(env_config: dict = None) -> gym.Env:
         # We have to know what dictionary ranges to use
         env_type = env_config["name"].split("-")[1]
         if env_type == "datacenter":
-            ranges = RANGES_5ZONE
-        elif env_type == "5Zone":
-            ranges = RANGES_IW
-        elif env_type == "IWMullion":
             ranges = RANGES_DATACENTER
+        elif env_type == "5Zone":
+            ranges = RANGES_5ZONE
+        elif env_type == "IWMullion":
+            ranges = RANGES_IW
         else:
             raise NameError(f"env_type {env_type} is not valid, check environment name")
         env = sinergym.utils.wrappers.NormalizeObservation(env, ranges=ranges)
