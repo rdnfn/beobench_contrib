@@ -30,7 +30,7 @@ def create_env(env_config: dict = None) -> gym.Env:
     # https://github.com/jajimer/sinergym/blob/24a37965f4e749faf6caaa3d4ece95330a478904/DRL_battery.py#L221
     if env_config["normalize"]:
         # We have to know what dictionary ranges to use
-        env_type = env_config["name"].split("-")[2]
+        env_type = env_config["name"].split("-")[1]
         if env_type == "datacenter":
             ranges = RANGES_5ZONE
         elif env_type == "5Zone":
@@ -38,7 +38,7 @@ def create_env(env_config: dict = None) -> gym.Env:
         elif env_type == "IWMullion":
             ranges = RANGES_DATACENTER
         else:
-            raise NameError("env_type is not valid, check environment name")
+            raise NameError(f"env_type {env_type} is not valid, check environment name")
         env = sinergym.utils.wrappers.NormalizeObservation(env, ranges=ranges)
 
     if env_config["multi_observation"]:
