@@ -3,7 +3,7 @@ import numpy as np
 import energym
 from typing import Tuple
 from copy import deepcopy
-
+from re import match
 
 class EnergymGymEnv(gym.env):
     '''
@@ -53,6 +53,11 @@ class EnergymGymEnv(gym.env):
                 'OR discretize, not both.'
             )
 
+
+
+        values = ['123', '234', 'foobar']
+        filtered_values = list(filter(lambda v: match('^\d+$', v), values))
+
         self.env = env
         self.max_episode_length = max_episode_length
         self.step_period = step_period
@@ -64,6 +69,9 @@ class EnergymGymEnv(gym.env):
         self.act_keys = [key for key in self.env.get_inputs_names()]
         self.obs_keys = [key for key in self.env.get_outputs_names()]
         self.n_act = len(self.act_keys)
+        self.temps = list(filter(lambda t: match('Z\d\d_T', t), self.obs_keys))
+        self.power = ['Fa_Pw_All']
+
         self.cont_actions = []
         self.discrete_actions = []
         self.cont_obs = []
@@ -161,7 +169,7 @@ class EnergymGymEnv(gym.env):
         self.reward_range = (-float("inf"), float("inf"))
 
     def step(self, action: np.array) -> Tuple[np.array, float, bool, dict]:
-        '''
+        """
         Takes action in Gym format, converts to Energym format and advances
         the simulation one time step, then reports results in Gym format.
 
@@ -181,20 +189,23 @@ class EnergymGymEnv(gym.env):
             True if episode is finished after this step
         info: dictionary
             Additional information for this step
-
-        '''
-
+        """
+        # convert rllib action vector to dictionary compatible with energym
         action_dict = self.action_converter(action)
 
         # take step in energym environment
         observations = self.env.step(action_dict)
 
+        # determine whether episode is finshed
         done = self.compute_done(observations)
 
+        # evaluate reward
         reward = self.compute_reward(observations)
 
+        # convert energym output observation to obs vector compatible with rllib
         observations = self.obs_converter(observations)
 
+        # create dummy info variable, TBC what output we pass to user
         info = {}
 
         return observations, reward, done, info
@@ -202,21 +213,28 @@ class EnergymGymEnv(gym.env):
     def render(self):
         pass
 
-    def reset(self):
-        pass
+    def reset(self) -> None:
+        """
+        Resets the energym simulation
+        Args:
+            None
+        Returns:
+            None
+        """
+        self.env.reset()
 
     def seed(self):
         pass
 
     def obs_converter(self, observation: dict) -> np.array:
-        '''
+        """
         Takes energym observation and normalises in [-1,1]
         Args:
             observation (dict): unnormalised dictionary output of energym
 
         Returns:
             observation (np.array): array normalised outputs of shape (obs_dim,)
-        '''
+        """
         observation = deepcopy(observation)
 
         if self.normalize:
@@ -233,7 +251,7 @@ class EnergymGymEnv(gym.env):
         return observation
 
     def action_converter(self, action: np.array) -> dict:
-        '''
+        """
         Takes numpy array actions and converts to dictionary compatible with energym. This transformation is compatible
         with both normalized and discrete action spaces.
         Args:
@@ -245,7 +263,7 @@ class EnergymGymEnv(gym.env):
         Notes:
             energym expects values in action dict to be lists, hence the square brackets around each value in
             action_dict.
-        '''
+        """
 
         action = deepcopy(action)
         action_dict = {}
@@ -262,7 +280,7 @@ class EnergymGymEnv(gym.env):
         elif self.discretize:
             # un-discretize values
             for key in self.cont_actions:
-                action_dict[key] = [self.val_bins_act[action_dict[key]]] # index bins vals given action selected
+                action_dict[key] = [self.val_bins_act[action_dict[key]]]  # index bins vals given action selected
 
         else:
             # recreate action_dict with action as lists if not normalising or discretising as per function notes.
@@ -272,63 +290,65 @@ class EnergymGymEnv(gym.env):
 
         return action_dict
 
-    def compute_reward(self, observations):
-        # write default reward function similar to boptest
+    def compute_reward(self, observation: dict) -> np.float:
+        """
+        Compute reward given observation at current timestep.
 
-        return reward
+        Args:
+            observation (dict): Dictionary of observation from energym simulation
 
-    def compute_done(self, observation):
-        '''
+        Returns:
+            reward (np.float): Scalar reward from environment
+
+        Notes
+        -----
+        To be updated to allow for user specified reward function.
+        Currently, the reward motivates the agent to minimise energy-use
+        whilst maintaining building temperature in range [19, 24].
+        """
+
+        low_discomfort_temp = 19
+        high_discomfort_temp = 24
+        discomfort_penalty = 1
+
+        # discomfort term in reward
+        discomfort = 0
+        for t in self.temps:
+            temp = observation[t]
+
+            if (low_discomfort_temp <= temp) and (temp <= high_discomfort_temp):
+                pass
+            else:
+                discomfort -= discomfort_penalty * min((low_discomfort_temp - temp) ** 2,
+                                                        (high_discomfort_temp - temps) ** 2)
+
+        # energy term in reward
+        energy = -(observation[self.power] * (self.step_period / 60)) / 1000 # kWh
+
+        reward = energy + discomfort
+
+        return np.float(reward)
+
+    def compute_done(self, observation: dict):
+        """
         Compute whether the episode is finished or not. By default, a
         maximum episode length is defined and the episode will be finished
         only when the time exceeds this maximum episode length.
 
-        Returns
-        -------
-        done: boolean
-            Boolean indicating whether the episode is done or not.
+        Args:
+            observation (dict): Dictionary of observation from energym simulation
+
+        Returns:
+            done (boolean): Boolean indicating whether the episode is done or not.
 
         Notes
         -----
         The 'time' variable reported in energym observations is in seconds, but
         environment step period are in minutes for comprehensability. Hence, we
         convert the max_episode_length (timesteps) to seconds.
-        '''
+        """
 
         done = observation['time'] >= self.start_time + \
                (self.max_episode_length * self.step_period * 60)
 
         return done
-
-
-class NormalizedActionWrapper(gym.ActionWrapper):
-    '''
-    This wrapper normalizes the values of the action space to lie
-    between -1 and 1. Normalization can significantly help with convergence speed.
-    '''
-
-    def __init__(self, env):
-        # construct from parent class
-        super().__init__(env)
-
-
-class NormalizedObservationWrapper(gym.ObservationWrapper):
-    '''
-    This wrapper normalizes the values of the observation space to lie
-    between -1 and 1. Normalization can significantly help with convergence speed.
-    '''
-
-    def __init__(self, env):
-        # construct from parent class
-        super().__init__(env)
-
-
-class DiscretizedActionWrapper(gym.ActionWrapper):
-    '''
-    This wrapper normalizes the values of the observation space to lie
-    between -1 and 1. Normalization can significantly help with convergence speed.
-    '''
-
-    def __init__(self, env, n_bins_act):
-        # construct from parent class
-        super().__init__(env)
