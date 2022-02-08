@@ -4,6 +4,7 @@ import energym
 from typing import Tuple
 from copy import deepcopy
 
+
 class EnergymGymEnv(gym.env):
     '''
     Energym environment that follows gym interface, allowing RL agents
@@ -56,8 +57,8 @@ class EnergymGymEnv(gym.env):
         self.step_period = step_period
         self.normalize = normalize
         if discretize:
-            self.n_bins_act = discretize
-        self.start_time = self.step_period * 60 # convert minutes to seconds
+            self.n_bins = discretize
+        self.start_time = self.step_period * 60  # convert minutes to seconds
         self.act_keys = [key for key in self.env.get_inputs_names()]
         self.obs_keys = [key for key in self.env.get_outputs_names()]
         self.n_act = len(self.act_keys)
@@ -71,7 +72,7 @@ class EnergymGymEnv(gym.env):
         ### UPDATE ACTION SPACE ###
 
         # create gym action space from energym action space and get lower and upper bounds
-        action_space = {}
+        action_space = gym.spaces.Dict()
         act_low = {}
         act_high = {}
         for key, value in act_space.items():
@@ -93,26 +94,28 @@ class EnergymGymEnv(gym.env):
 
         # normalise action space if prompted by user
         if normalize:
-
-
-
+            for key in self.cont_actions:
+                action_space[key] = gym.spaces.Box(low=-1,
+                                                   high=1,
+                                                   shape=1,
+                                                   dtype=np.float32)
 
         # discretize action spaces if prompted by user
         if discretize:
             # Obtain values of discretized action space
             val_bins_act = {}
             for key in self.act_keys:
-                val_bins_act[key] = np.linspace(self.act_low[key], self.act_high[key], self.n_bins_act + 1)
+                val_bins_act[key] = np.linspace(self.act_low[key], self.act_high[key], self.n_bins + 1)
             self.val_bins_act = val_bins_act
 
             # Convert Box spaces to Discrete spaces
             for key in self.cont_actions:
-                action_space[key] = gym.spaces.Discrete(self.n_bins_act + 1)
+                action_space[key] = gym.spaces.Discrete(self.n_bins + 1)
 
-        ### UPDATE OBSERVATION SPACE
+        ### UPDATE OBSERVATION SPACE ###
 
         # create gym obs space from energym obs space and get lower and upper bounds
-        observation_space = {}
+        observation_space = gym.spaces.Dict()
         obs_low = {}
         obs_high = {}
         for key, value in obs_space.items():
@@ -127,39 +130,33 @@ class EnergymGymEnv(gym.env):
                 observation_space[key] = gym.spaces
                 self.discrete_obs.append(key)
 
+        self.obs_low = obs_low
+        self.obs_high = obs_high
+
         # normalise obs space if prompted by user
         if normalize:
+            for key in self.cont_obs:
+                action_space[key] = gym.spaces.Box(low=-1,
+                                                   high=1,
+                                                   shape=1,
+                                                   dtype=np.float32)
 
         # discretize obs spaces if prompted by user
         if discretize:
+            # Obtain values of discretized obs space
+            val_bins_obs = {}
+            for key in self.obs_keys:
+                val_bins_obs[key] = np.linspace(self.obs_low[key], self.obs_high[key], self.n_bins + 1)
+            self.val_bins_obs = val_bins_obs
 
-
-
-
+            # Convert Box spaces to Discrete spaces
+            for key in self.cont_obs:
+                action_space[key] = gym.spaces.Discrete(self.n_bins + 1)
 
         # configure Gym attributes
         self.action_space = action_space
         self.observation_space = observation_space
         self.reward_range = (-float("inf"), float("inf"))
-
-        # configure other attributes
-        self.obs_low = obs_low
-        self.obs_high = obs_high
-        self.act_low = act_low
-        self.act_high = act_high
-
-
-        ### OBSERVATION SPACE BOUNDS ###
-        upper_bound = {}
-        lower_bound = {}
-
-        default_upper = {key: self.env.output_space[key].high[0] for key in self.obs_space}
-        default_lower = {key: self.env.output_space[key].low[0] for key in self.obs_space}
-
-        self.obs_low = {**lower_bound, **default_lower}
-        self.obs_high = {**upper_bound, **default_upper}
-
-        ### ACTION SPACE
 
     def step(self, action: np.array) -> Tuple[np.array, float, bool, dict]:
         '''
@@ -250,7 +247,7 @@ class EnergymGymEnv(gym.env):
             # un-normalise values
             for key in self.cont_actions:
                 action_dict[key] = [((action_dict[key] + 1) / 2) * (self.act_high[key] - self.act_low[key]) \
-                         + self.act_low[key]]
+                                    + self.act_low[key]]
 
         return action_dict
 
@@ -278,7 +275,7 @@ class EnergymGymEnv(gym.env):
         '''
 
         done = observation['time'] >= self.start_time + \
-                                    (self.max_episode_length * self.step_period * 60)
+               (self.max_episode_length * self.step_period * 60)
 
         return done
 
@@ -290,9 +287,9 @@ class NormalizedActionWrapper(gym.ActionWrapper):
     '''
 
     def __init__(self, env):
-
         # construct from parent class
         super().__init__(env)
+
 
 class NormalizedObservationWrapper(gym.ObservationWrapper):
     '''
@@ -301,9 +298,9 @@ class NormalizedObservationWrapper(gym.ObservationWrapper):
     '''
 
     def __init__(self, env):
-
         # construct from parent class
         super().__init__(env)
+
 
 class DiscretizedActionWrapper(gym.ActionWrapper):
     '''
@@ -312,6 +309,5 @@ class DiscretizedActionWrapper(gym.ActionWrapper):
     '''
 
     def __init__(self, env, n_bins_act):
-
         # construct from parent class
         super().__init__(env)
