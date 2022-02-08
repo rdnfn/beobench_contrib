@@ -45,6 +45,12 @@ class EnergymGymEnv(gym.env):
         '''
         super().__init__()
 
+        if normalize and discretize:
+            raise ValueError(
+                'Energym cannot normalise and discretize the state/action spaces. Please choose to normalize'
+                'OR discretize, not both.'
+            )
+
         self.env = env
         self.max_episode_length = max_episode_length
         self.step_period = step_period
@@ -54,6 +60,7 @@ class EnergymGymEnv(gym.env):
         self.start_time = self.step_period * 60 # convert minutes to seconds
         self.act_keys = [key for key in self.env.get_inputs_names()]
         self.obs_keys = [key for key in self.env.get_outputs_names()]
+        self.n_act = len(self.act_keys)
         self.cont_actions = []
         self.discrete_actions = []
         self.cont_obs = []
@@ -61,7 +68,9 @@ class EnergymGymEnv(gym.env):
         act_space = env.input_space
         obs_space = env.output_space
 
-        # extract gym action space from energym action space
+        ### UPDATE ACTION SPACE ###
+
+        # create gym action space from energym action space and get lower and upper bounds
         action_space = {}
         act_low = {}
         act_high = {}
@@ -75,20 +84,34 @@ class EnergymGymEnv(gym.env):
 
             elif isinstance(value, energym.spaces.Discrete):
                 action_space[key] = gym.spaces.Discrete(value.n)
+                act_low[key] = 0
+                act_low[key] = value.n
                 self.discrete_actions.append(key)
 
+        self.act_low = act_low
+        self.act_high = act_high
+
+        # normalise action space if prompted by user
+        if normalize:
+
+
+
+
+        # discretize action spaces if prompted by user
         if discretize:
-            # Calculate dimension of action space
-            self.n_act = len(self.act_keys)
-
             # Obtain values of discretized action space
-            self.val_bins_act = [np.linspace(l, h, self.n_bins_act + 1)
-                                 for l, h in zip(low.flatten(), high.flatten())]
+            val_bins_act = {}
+            for key in self.act_keys:
+                val_bins_act[key] = np.linspace(self.act_low[key], self.act_high[key], self.n_bins_act + 1)
+            self.val_bins_act = val_bins_act
 
-            # Instantiate discretized action space
-            self.action_space = spaces.Discrete((n_bins_act + 1) ** self.n_act)
+            # Convert Box spaces to Discrete spaces
+            for key in self.cont_actions:
+                action_space[key] = gym.spaces.Discrete(self.n_bins_act + 1)
 
-        # extract gym observation space from energym obs space
+        ### UPDATE OBSERVATION SPACE
+
+        # create gym obs space from energym obs space and get lower and upper bounds
         observation_space = {}
         obs_low = {}
         obs_high = {}
@@ -103,6 +126,16 @@ class EnergymGymEnv(gym.env):
             elif isinstance(value, energym.spaces.Discrete):
                 observation_space[key] = gym.spaces
                 self.discrete_obs.append(key)
+
+        # normalise obs space if prompted by user
+        if normalize:
+
+        # discretize obs spaces if prompted by user
+        if discretize:
+
+
+
+
 
         # configure Gym attributes
         self.action_space = action_space
@@ -150,11 +183,9 @@ class EnergymGymEnv(gym.env):
         info: dictionary
             Additional information for this step
 
-
-
         '''
 
-        action_dict = self.action_convertor(action, norm=self.normalize)
+        action_dict = self.action_converter(action, norm=self.normalize)
 
         observations = self.env.step(action_dict)
 
@@ -162,10 +193,9 @@ class EnergymGymEnv(gym.env):
 
         reward = self.compute_reward(observations)
 
-        observations = self.obs_convertor(observations)
+        observations = self.obs_converter(observations)
 
         info = {}
-
 
         return observations, reward, done, info
 
@@ -178,7 +208,7 @@ class EnergymGymEnv(gym.env):
     def seed(self):
         pass
 
-    def obs_normaliser(self, observation: dict, norm: bool) -> np.array:
+    def obs_converter(self, observation: dict) -> np.array:
         '''
         Takes energym observation and normalises in [-1,1]
         Args:
@@ -189,19 +219,20 @@ class EnergymGymEnv(gym.env):
         '''
         observation = deepcopy(observation)
 
-        # normalise values
-        if norm:
-            for key in self.obs_keys:
-                observation[key] = 2 * (observation[key] - self.obs_low[key]) / (self.obs_high[key] - self.obs_low[key]) - 1
-
+        # normalise values in range [-1,1]
+        if self.normalize:
+            for key in self.cont_obs:
+                observation[key] = 2 * (observation[key] - self.obs_low[key]) / (self.obs_high[key]
+                                                                                 - self.obs_low[key]) - 1
         # convert to ndarray
         observation = np.array(list(observation.values()), dtype=np.float).reshape(len(observation.values()), )
 
         return observation
 
-    def action_convertor(self, action: np.array, norm: bool) -> dict:
+    def action_converter(self, action: np.array) -> dict:
         '''
-        Takes numpy array actions and converts to dictionary compatible with energym
+        Takes numpy array actions and converts to dictionary compatible with energym. This transformation is compatible
+        with both normalized and discrete action spaces.
         Args:
             action (np.array): Array of actions computed by the agent to be implemented in this step
 
@@ -212,26 +243,19 @@ class EnergymGymEnv(gym.env):
         action = deepcopy(action)
         action_dict = {}
 
-        for i, key, in enumerate(self.act_keys):
+        for i, key in enumerate(self.act_keys):
             action_dict[key] = action[i]
 
-        if norm:
+        if self.normalize:
             # un-normalise values
             for key in self.cont_actions:
                 action_dict[key] = [((action_dict[key] + 1) / 2) * (self.act_high[key] - self.act_low[key]) \
                          + self.act_low[key]]
 
-            # manually interpret discrete elements of action array
-            if len(self.discrete_actions) > 0:
-                for key in self.discrete_actions:
-                    if action_dict[key] <= 0:
-                        action_dict[key] = [0]
-                    else:
-                        action_dict[key] = [1]
-
         return action_dict
 
     def compute_reward(self, observations):
+        # write default reward function similar to boptest
 
         return reward
 
