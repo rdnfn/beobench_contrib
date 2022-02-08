@@ -57,7 +57,8 @@ class EnergymGymEnv(gym.env):
         self.max_episode_length = max_episode_length
         self.step_period = step_period
         self.normalize = normalize
-        if discretize:
+        self.discretize = discretize
+        if self.discretize:
             self.n_bins = discrete_bins
         self.start_time = self.step_period * 60  # convert minutes to seconds
         self.act_keys = [key for key in self.env.get_inputs_names()]
@@ -240,6 +241,10 @@ class EnergymGymEnv(gym.env):
 
         Returns:
             action (dict): Dict of actions in format recognisable to energym
+
+        Notes:
+            energym expects values in action dict to be lists, hence the square brackets around each value in
+            action_dict.
         '''
 
         action = deepcopy(action)
@@ -253,6 +258,17 @@ class EnergymGymEnv(gym.env):
             for key in self.cont_actions:
                 action_dict[key] = [((action_dict[key] + 1) / 2) * (self.act_high[key] - self.act_low[key]) \
                                     + self.act_low[key]]
+
+        elif self.discretize:
+            # un-discretize values
+            for key in self.cont_actions:
+                action_dict[key] = [self.val_bins_act[action_dict[key]]] # index bins vals given action selected
+
+        else:
+            # recreate action_dict with action as lists if not normalising or discretising as per function notes.
+            # to-do: find more elegant way of performing this transformation
+            for i, key in enumerate(self.act_keys):
+                action_dict[key] = [action[i]]
 
         return action_dict
 
