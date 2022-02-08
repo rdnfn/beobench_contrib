@@ -5,7 +5,7 @@ from typing import Tuple
 from copy import deepcopy
 from re import match
 
-class EnergymGymEnv(gym.env):
+class EnergymGymEnv(gym.Env):
     '''
     Energym environment that follows gym interface, allowing RL agents
     to interact with building models readily.
@@ -49,8 +49,8 @@ class EnergymGymEnv(gym.env):
 
         if normalize and discretize:
             raise ValueError(
-                'Energym cannot normalise and discretize the state/action spaces. Please choose to normalize'
-                'OR discretize, not both.'
+                'Energym cannot normalise and discretize the state/action spaces. Please choose to normalize '
+                ' OR discretize, not both.'
             )
 
 
@@ -85,18 +85,19 @@ class EnergymGymEnv(gym.env):
         action_space = gym.spaces.Dict()
         act_low = {}
         act_high = {}
-        for key, value in act_space.items():
-            if isinstance(value, energym.spaces.Box):
-                action_space[key] = gym.spaces.Box(low=value.low[0], high=value.high[0],
-                                                   shape=value.shape, dtype=np.float32)
+        for key in self.act_keys:
+            action = act_space[key]
+            if isinstance(action, energym.spaces.box.Box):
+                action_space[key] = gym.spaces.Box(low=action.low[0], high=action.high[0],
+                                                   shape=action.shape, dtype=np.float32)
                 self.cont_actions.append(key)
-                act_low[key] = value.low[0]
-                act_high[key] = value.high[0]
+                act_low[key] = action.low[0]
+                act_high[key] = action.high[0]
 
-            elif isinstance(value, energym.spaces.Discrete):
-                action_space[key] = gym.spaces.Discrete(value.n)
+            elif isinstance(action, energym.spaces.discrete.Discrete):
+                action_space[key] = gym.spaces.Discrete(action.n)
                 act_low[key] = 0
-                act_low[key] = value.n
+                act_low[key] = action.n
                 self.discrete_actions.append(key)
 
         self.act_low = act_low
@@ -105,10 +106,8 @@ class EnergymGymEnv(gym.env):
         # normalise action space if prompted by user
         if normalize:
             for key in self.cont_actions:
-                action_space[key] = gym.spaces.Box(low=-1,
-                                                   high=1,
-                                                   shape=1,
-                                                   dtype=np.float32)
+                action_space[key] = gym.spaces.Box(low=-1, high=1,
+                                                   shape=action_space[key].shape, dtype=np.float32)
 
         # discretize action spaces if prompted by user
         if discretize:
@@ -128,15 +127,16 @@ class EnergymGymEnv(gym.env):
         observation_space = gym.spaces.Dict()
         obs_low = {}
         obs_high = {}
-        for key, value in obs_space.items():
-            if isinstance(value, energym.spaces.Box):
-                observation_space[key] = gym.spaces.Box(low=value.low[0], high=value.high[0],
-                                                        shape=value.shape, dtype=np.float32)
+        for key in self.obs_keys:
+            obs = obs_space[key]
+            if isinstance(obs, energym.spaces.box.Box):
+                observation_space[key] = gym.spaces.Box(low=obs.low[0], high=obs.high[0],
+                                                        shape=obs.shape, dtype=np.float32)
                 self.cont_obs.append(key)
-                obs_low[key] = value.low[0]
-                obs_high[key] = value.high[0]
+                obs_low[key] = obs.low[0]
+                obs_high[key] = obs.high[0]
 
-            elif isinstance(value, energym.spaces.Discrete):
+            elif isinstance(obs, energym.spaces.discrete.Discrete):
                 observation_space[key] = gym.spaces
                 self.discrete_obs.append(key)
 
@@ -146,10 +146,8 @@ class EnergymGymEnv(gym.env):
         # normalise obs space if prompted by user
         if normalize:
             for key in self.cont_obs:
-                action_space[key] = gym.spaces.Box(low=-1,
-                                                   high=1,
-                                                   shape=1,
-                                                   dtype=np.float32)
+                observation_space[key] = gym.spaces.Box(low=-1, high=1,
+                                                        shape=observation_space[key].shape, dtype=np.float32)
 
         # discretize obs spaces if prompted by user
         if discretize:
@@ -161,7 +159,7 @@ class EnergymGymEnv(gym.env):
 
             # Convert Box spaces to Discrete spaces
             for key in self.cont_obs:
-                action_space[key] = gym.spaces.Discrete(self.n_bins + 1)
+                observation_space[key] = gym.spaces.Discrete(self.n_bins + 1)
 
         # configure Gym attributes
         self.action_space = action_space
