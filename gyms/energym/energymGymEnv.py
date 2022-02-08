@@ -37,7 +37,8 @@ class EnergymGymEnv(gym.env):
                  max_episode_length=35040,
                  step_period=15,
                  normalize=True,
-                 discretize=30
+                 discretize=False,
+                 discrete_bins=30
                  ):
         '''
         Takes energym.env and updates class to follow gym.env framework.
@@ -57,7 +58,7 @@ class EnergymGymEnv(gym.env):
         self.step_period = step_period
         self.normalize = normalize
         if discretize:
-            self.n_bins = discretize
+            self.n_bins = discrete_bins
         self.start_time = self.step_period * 60  # convert minutes to seconds
         self.act_keys = [key for key in self.env.get_inputs_names()]
         self.obs_keys = [key for key in self.env.get_outputs_names()]
@@ -182,8 +183,9 @@ class EnergymGymEnv(gym.env):
 
         '''
 
-        action_dict = self.action_converter(action, norm=self.normalize)
+        action_dict = self.action_converter(action)
 
+        # take step in energym environment
         observations = self.env.step(action_dict)
 
         done = self.compute_done(observations)
@@ -216,11 +218,14 @@ class EnergymGymEnv(gym.env):
         '''
         observation = deepcopy(observation)
 
-        # normalise values in range [-1,1]
         if self.normalize:
             for key in self.cont_obs:
                 observation[key] = 2 * (observation[key] - self.obs_low[key]) / (self.obs_high[key]
                                                                                  - self.obs_low[key]) - 1
+        elif self.discretize:
+            for key in self.cont_obs:
+                observation[key] = np.digitize(observation[key], self.val_bins_obs[key])
+
         # convert to ndarray
         observation = np.array(list(observation.values()), dtype=np.float).reshape(len(observation.values()), )
 
