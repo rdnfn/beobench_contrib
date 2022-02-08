@@ -23,11 +23,11 @@ class EnergymGymEnv(gym.Env):
     render()
         Renders animation of environment. (not implemented)
     reset()
-        Resets the simulation environment. (not implemented)
+        Resets the simulation environment.
     seed()
         Sets seed for environment random number generator. (not implemented)
     close()
-        Closes the simulation environment. (not implemented)
+        Closes the simulation environment.
 
 
     '''
