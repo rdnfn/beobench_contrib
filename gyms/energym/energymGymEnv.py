@@ -53,11 +53,6 @@ class EnergymGymEnv(gym.Env):
                 ' OR discretize, not both.'
             )
 
-
-
-        values = ['123', '234', 'foobar']
-        filtered_values = list(filter(lambda v: match('^\d+$', v), values))
-
         self.env = env
         self.max_episode_length = max_episode_length
         self.step_period = step_period
@@ -278,7 +273,7 @@ class EnergymGymEnv(gym.Env):
         elif self.discretize:
             # un-discretize values
             for key in self.cont_actions:
-                action_dict[key] = [self.val_bins_act[action_dict[key]]]  # index bins vals given action selected
+                action_dict[key] = [self.val_bins_act[key][action_dict[key]]]  # index bins vals given action selected
 
         else:
             # recreate action_dict with action as lists if not normalising or discretising as per function notes.
