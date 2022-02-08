@@ -313,10 +313,10 @@ class EnergymGymEnv(gym.Env):
                 pass
             else:
                 discomfort -= discomfort_penalty * min((low_discomfort_temp - temp) ** 2,
-                                                        (high_discomfort_temp - temps) ** 2)
+                                                        (high_discomfort_temp - temp) ** 2)
 
         # energy term in reward
-        energy = -(observation[self.power] * (self.step_period / 60)) / 1000 # kWh
+        energy = -(observation[self.power[0]] * (self.step_period / 60)) / 1000 # kWh
 
         reward = energy + discomfort
 
