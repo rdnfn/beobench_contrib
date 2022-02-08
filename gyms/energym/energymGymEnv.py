@@ -7,18 +7,64 @@ from re import match
 
 class EnergymGymEnv(gym.Env):
     '''
-    Energym environment that follows gym interface, allowing RL agents
-    to interact with building models readily.
+    Energym environment that follows gym interface.
 
     Attributes
     ----------
-    energym_path : str
-        Absolute path to the energym folder.
-    runs_path : str
-        Path to store the information of the simulation run.
+    env: energym.env
+        Energym env instance to be converted
+    action_space: gym.spaces.Dict
+        Environment action space in gym-compatible format
+    observation_space: gym.spaces.Dict
+        Environment observation space in gym-compatible format
+    reward_range: tuple
+        Accepted reward range for environment
+    max_episode_length: int
+        Maximum number of timesteps in one episode
+    step_period: int
+        Number of real-world minutes between timesteps in building simulation
+    normalize: bool
+        User-provided flag to require state and action spaces to be normalized
+    discretize: bool
+        User-provided flag to require state and action spaces to be discretized
+    n_bins: int
+        Number of bins to use for state/action discretization
+    start_time: int
+        Start time of simulation in seconds
+    act_keys: list
+        List of action strings
+    obs_keys: list
+        List of observation strings
+    n_act: int
+        Number of actions in action space
+    temps: list
+        List of temperature-related feature strings
+    power: list
+        List of power-related feature strings
+    cont_actions: list
+        List of continuous action strings
+    discrete_actions: list
+        List of discrete action strings
+    cont_obs: list
+        List of continuous observation strings
+    discrete_obs: list
+        List of discrete observation strings
+    act_low: dict
+        Dictionary of lower bounds of actions
+    act_high: dict
+        Dictionary of upper bounds of actions
+    obs_low: dict
+        Dictionary of lower bounds of observations
+    obs_high: dict
+        Dictionary of upper bounds of observations
+    val_bins_act: dict
+        Dictionary of ndarrays for action bin values if environment is discretized
+    val_bins_obs: dict
+        Dictionary of ndarrays for observation bin values if environment is discretized
+
     Methods
     -------
-    step(action)
+    step()
         Advances the simulation by one timestep
     render()
         Renders animation of environment. (not implemented)
@@ -28,8 +74,14 @@ class EnergymGymEnv(gym.Env):
         Sets seed for environment random number generator. (not implemented)
     close()
         Closes the simulation environment.
-
-
+    action_converter()
+        Converts ndarray action to Dict compatable with energym
+    obs_converter()
+        Converts energym output Dict to ndarray compatible with RL agents
+    compute_reward()
+        Calculates reward given environment observation
+    compute_done()
+        Raises True if at end of episode
     '''
 
     def __init__(self,
@@ -40,11 +92,7 @@ class EnergymGymEnv(gym.Env):
                  discretize=False,
                  discrete_bins=30
                  ):
-        '''
-        Takes energym.env and updates class to follow gym.env framework.
-        Args:
-            env (energym.env, required): energym environment instance
-        '''
+
         super().__init__()
 
         if normalize and discretize:
@@ -159,14 +207,14 @@ class EnergymGymEnv(gym.Env):
         # configure Gym attributes
         self.action_space = action_space
         self.observation_space = observation_space
-        self.reward_range = (-float("inf"), float("inf"))
+        self.reward_range = (-float("inf"), 0)
 
     def step(self, action: np.array) -> Tuple[np.array, float, bool, dict]:
         """
         Takes action in Gym format, converts to Energym format and advances
         the simulation one time step, then reports results in Gym format.
 
-        Parameters
+        Args
         ----------
         action: numpy array
             List of actions computed by the agent to be implemented
@@ -222,6 +270,7 @@ class EnergymGymEnv(gym.Env):
     def obs_converter(self, observation: dict) -> np.array:
         """
         Takes energym observation and normalises in [-1,1]
+
         Args:
             observation (dict): unnormalised dictionary output of energym
 
@@ -247,6 +296,7 @@ class EnergymGymEnv(gym.Env):
         """
         Takes numpy array actions and converts to dictionary compatible with energym. This transformation is compatible
         with both normalized and discrete action spaces.
+
         Args:
             action (np.array): Array of actions computed by the agent to be implemented in this step
 
