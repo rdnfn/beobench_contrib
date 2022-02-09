@@ -48,13 +48,17 @@ WORKDIR /app
 ADD . /app
 #RUN  python setup.py install --verbose
 
-# CUSTOM BEOBENCH
+####### CUSTOM BEOBENCH
 # Install energym Python package
 # Working directory and copy files
 RUN pip3 install --upgrade pip
-RUN apt-get update && apt-get upgrade -y && apt-get install -y git
-RUN python -m pip install "git+https://github.com/bsl546/energym.git"
+# RUN apt-get update && apt-get upgrade -y &&
+RUN apt-get install -y git
+#RUN python -m pip install "git+https://github.com/bsl546/energym.git"
 
+WORKDIR /home
+RUN git clone "https://github.com/bsl546/energym.git" && cd energym \
+    && python setup.py install --verbose
 
 ###########################################################
 
