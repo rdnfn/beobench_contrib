@@ -3,9 +3,7 @@
 import gym
 import energym
 from energymGymEnv import EnergymGymEnv
-from energymGymEnv import NormalizedActionWrapper
-from energymGymEnv import NormalizedObservationWrapper
-from energymGymEnv import DiscretizedActionWrapper
+
 
 def create_env(env_config: dict = None) -> gym.Env:
     """Create Energym environment.
@@ -35,18 +33,17 @@ def create_env(env_config: dict = None) -> gym.Env:
                 "max_episode_length": 35040,
                 "step_period": 15,
                 "normalize": True,
-                "discretize": 30
-            }
+                "discretize": 30,
+            },
         }
 
     # build energym environment
-    env = energym.make(env_config["energym_environment"],
-                       weather=env_config["weather"],
-                       simulation_days=env_config["days"]
-                       )
+    env = energym.make(
+        env_config["energym_environment"],
+        weather=env_config["weather"],
+        simulation_days=env_config["days"],
+    )
 
     env = EnergymGymEnv(env, **env_config["gym_kwargs"])
 
     return env
-
-
