@@ -287,7 +287,7 @@ class EnergymGymEnv(gym.Env):
         if self.normalize:
             for key in self.cont_obs:
                 obs[key] = np.array(2 * (observation[key] - self.obs_low[key]) /
-                                    (self.obs_high[key] - self.obs_low[key]) - 1).reshape(len(observation[key]),)
+                                    (self.obs_high[key] - self.obs_low[key]) - 1).reshape(1,)
 
         elif self.discretize:
             for key in self.cont_obs:
