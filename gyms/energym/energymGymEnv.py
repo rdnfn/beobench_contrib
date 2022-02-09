@@ -265,6 +265,8 @@ class EnergymGymEnv(gym.Env):
         """
         self.env.reset()
         obs = self.env.get_output()
+        obs = self.obs_converter(obs)
+
         return obs
 
     def seed(self):
