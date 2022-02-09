@@ -46,7 +46,9 @@ RUN cd /usr/local/bin \
 WORKDIR /app
 
 ADD . /app
-RUN  python setup.py install --verbose
+#RUN  python setup.py install --verbose
+RUN python -m pip install "git+https://github.com/bsl546/energym.git"
+
 
 ###########################################################
 
