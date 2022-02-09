@@ -69,6 +69,7 @@ RUN mkdir -p /opt/beobench/ \
 
 # add env creator
 COPY env_creator.py /opt/beobench/experiment_setup/
+COPY energymGymEnv.py /opt/beobench/experiment_setup/
 # add env creator to python path
 ENV PYTHONPATH "${PYTHONPATH}:/opt/beobench/experiment_setup/"
 
