@@ -256,13 +256,16 @@ class EnergymGymEnv(gym.Env):
 
     def reset(self) -> None:
         """
-        Resets the energym simulation
+        Resets the energym simulation and return first observation
         Args:
             None
         Returns:
-            None
+            obs (dict):
+                first observation from reset environment
         """
         self.env.reset()
+        obs = self.env.get_output()
+        return obs
 
     def seed(self):
         pass
