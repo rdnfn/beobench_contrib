@@ -283,19 +283,20 @@ class EnergymGymEnv(gym.Env):
             observation (np.array): array normalised outputs of shape (obs_dim,)
         """
         observation = deepcopy(observation)
-
+        obs = {}
         if self.normalize:
             for key in self.cont_obs:
-                observation[key] = 2 * (observation[key] - self.obs_low[key]) / (self.obs_high[key]
-                                                                                 - self.obs_low[key]) - 1
+                obs[key] = np.array(2 * (observation[key] - self.obs_low[key]) /
+                                    (self.obs_high[key] - self.obs_low[key]) - 1).reshape(len(observation[key]),)
+
         elif self.discretize:
             for key in self.cont_obs:
-                observation[key] = np.digitize(observation[key], self.val_bins_obs[key])
+                obs[key] = np.digitize(observation[key], self.val_bins_obs[key])
 
         # convert to ndarray
-        observation = np.array(list(observation.values()), dtype=np.float).reshape(len(observation.values()), )
+        # observation = np.array(list(observation.values()), dtype=np.float).reshape(len(observation.values()), )
 
-        return observation
+        return obs
 
     def action_converter(self, action: np.array) -> dict:
         """
