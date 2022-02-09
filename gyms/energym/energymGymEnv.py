@@ -291,7 +291,7 @@ class EnergymGymEnv(gym.Env):
 
         elif self.discretize:
             for key in self.cont_obs:
-                obs[key] = np.digitize(observation[key], self.val_bins_obs[key], dtype=np.float32)
+                obs[key] = np.digitize(observation[key], self.val_bins_obs[key], dtype=np.int32)
 
         # convert to ndarray
         # observation = np.array(list(observation.values()), dtype=np.float).reshape(len(observation.values()), )
