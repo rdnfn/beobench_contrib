@@ -303,6 +303,9 @@ class EnergymGymEnv(gym.Env):
                 obs[key] = np.array(2 * (observation[key] - self.obs_low[key]) /
                                     (self.obs_high[key] - self.obs_low[key]) - 1, dtype=np.float32).reshape(1, )
 
+                # clip observations into normalised bounds
+                obs[key] = np.clip(obs[key], a_min=-1, a_max=1)
+
         elif self.discretize:
             for key in self.cont_obs:
                 obs[key] = np.digitize(observation[key], self.val_bins_obs[key], dtype=np.int32)
@@ -333,8 +336,11 @@ class EnergymGymEnv(gym.Env):
         if self.normalize:
             # un-normalise values
             for key in self.cont_actions:
-                action[key] = [((action[key] + 1) / 2) * (self.act_high[key] - self.act_low[key]) \
-                                    + self.act_low[key]]
+                action[key] = ((action[key] + 1) / 2) * (self.act_high[key] - self.act_low[key]) \
+                                    + self.act_low[key]
+
+                # clip actions into appropriate bounds
+                actions_dict[key] = [np.clip(action[key], a_min=self.act_low[key], a_max=self.act_high[key])]
 
         elif self.discretize:
             # un-discretize values
