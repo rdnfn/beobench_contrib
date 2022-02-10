@@ -340,7 +340,7 @@ class EnergymGymEnv(gym.Env):
                                     + self.act_low[key]
 
                 # clip actions into appropriate bounds
-                actions_dict[key] = [np.clip(action[key], a_min=self.act_low[key], a_max=self.act_high[key])]
+                action[key] = [np.clip(action[key], a_min=self.act_low[key], a_max=self.act_high[key])]
 
         elif self.discretize:
             # un-discretize values
