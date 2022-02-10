@@ -233,10 +233,10 @@ class EnergymGymEnv(gym.Env):
             Additional information for this step
         """
         # convert rllib action vector to dictionary compatible with energym
-        action_dict = self.action_converter(action)
+        action = self.action_converter(action)
 
         # take step in energym environment
-        observations = self.env.step(action_dict)
+        observations = self.env.step(action)
 
         # determine whether episode is finshed
         done = self.compute_done(observations)
@@ -312,7 +312,7 @@ class EnergymGymEnv(gym.Env):
 
         return obs
 
-    def action_converter(self, action: np.array) -> dict:
+    def action_converter(self, action: dict) -> dict:
         """
         Takes numpy array actions and converts to dictionary compatible with energym. This transformation is compatible
         with both normalized and discrete action spaces.
@@ -325,33 +325,23 @@ class EnergymGymEnv(gym.Env):
 
         Notes:
             energym expects values in action dict to be lists, hence the square brackets around each value in
-            action_dict.
+            action.
         """
 
         action = deepcopy(action)
-        action_dict = {}
-
-        for i, key in enumerate(self.act_keys):
-            action_dict[key] = action[i]
 
         if self.normalize:
             # un-normalise values
             for key in self.cont_actions:
-                action_dict[key] = [((action_dict[key] + 1) / 2) * (self.act_high[key] - self.act_low[key]) \
+                action[key] = [((action[key] + 1) / 2) * (self.act_high[key] - self.act_low[key]) \
                                     + self.act_low[key]]
 
         elif self.discretize:
             # un-discretize values
             for key in self.cont_actions:
-                action_dict[key] = [self.val_bins_act[key][action_dict[key]]]  # index bins vals given action selected
+                action[key] = [self.val_bins_act[key][action[key]]]  # index bins vals given action selected
 
-        else:
-            # recreate action_dict with action as lists if not normalising or discretising as per function notes.
-            # to-do: find more elegant way of performing this transformation
-            for i, key in enumerate(self.act_keys):
-                action_dict[key] = [action[i]]
-
-        return action_dict
+        return action
 
     def compute_reward(self, observation: dict) -> np.float:
         """
