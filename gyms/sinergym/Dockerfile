@@ -94,3 +94,4 @@ ENV LANG=C.UTF-8
 
 # Fix for missing stable baselines dependency
 RUN python3 -m pip --disable-pip-version-check --no-cache-dir install stable-baselines3
+RUN python3 -m pip --disable-pip-version-check --no-cache-dir install importlib-resources
