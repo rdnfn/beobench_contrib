@@ -1,4 +1,4 @@
-# Energym integration
+# Energym
 
 This document describes the Energym integration in Beobench.
 

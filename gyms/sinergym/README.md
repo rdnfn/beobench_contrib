@@ -1,4 +1,4 @@
-# Sinergym integration
+# Sinergym
 
 This document describes the singergym integration in beobench.
 

@@ -1,4 +1,4 @@
-# BOPTEST integration
+# BOPTEST
 
 This document describes the BOPTEST integration in Beobench.
 
