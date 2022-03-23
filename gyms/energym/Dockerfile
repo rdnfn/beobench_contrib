@@ -71,14 +71,8 @@ WORKDIR /var/simdata/energyplus
 RUN mkdir -p /opt/beobench/ \
     && cd /opt/beobench/
 
-# add env creator
-COPY env_creator.py /opt/beobench/experiment_setup/
+# add energyEnv
 COPY energymGymEnv.py /opt/beobench/experiment_setup/
-# add env creator to python path
-ENV PYTHONPATH "${PYTHONPATH}:/opt/beobench/experiment_setup/"
-
-# install beobench package
-RUN python3 -m pip --disable-pip-version-check --no-cache-dir install beobench
 
 
 

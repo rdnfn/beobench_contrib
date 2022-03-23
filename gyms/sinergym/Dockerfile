@@ -86,15 +86,6 @@ RUN mkdir -p /opt/beobench/ \
     && git clone https://github.com/jajimer/sinergym.git \
     && cd sinergym && python3 -m pip install -e .
 
-
-# add env creator
-COPY env_creator.py /opt/beobench/experiment_setup/
-# add env creator to python path
-ENV PYTHONPATH "${PYTHONPATH}:/opt/beobench/experiment_setup/"
-
-# install beobench package
-RUN python3 -m pip --disable-pip-version-check --no-cache-dir install beobench
-
 # Fixes
 
 # Fix for click encoding problem
