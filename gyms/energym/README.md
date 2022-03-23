@@ -1,10 +1,10 @@
-# Energym integration in beobench
+# Energym integration
 
 This document describes the Energym integration in Beobench.
 
 ## Resources
-- Repository: https://github.com/bsl546/energym
-- Documentation: https://bsl546.github.io/energym-pages/
+- Repository: <https://github.com/bsl546/energym>
+- Documentation: <https://bsl546.github.io/energym-pages/>
 
 ## Licensing
 

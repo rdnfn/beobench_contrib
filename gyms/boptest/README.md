@@ -1,10 +1,10 @@
-# BOPTEST integration in beobench
+# BOPTEST integration
 
 This document describes the BOPTEST integration in Beobench.
 
 ## Resources
-- Main repository: https://github.com/ibpsa/project1-boptest
-- Gym repository: https://github.com/ibpsa/project1-boptest-gym
+- Main repository: <https://github.com/ibpsa/project1-boptest>
+- Gym repository: <https://github.com/ibpsa/project1-boptest-gym>
 
 ## Licensing
 

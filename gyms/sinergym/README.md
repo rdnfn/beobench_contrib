@@ -1,10 +1,10 @@
-# Sinergym integration in beobench
+# Sinergym integration
 
 This document describes the singergym integration in beobench.
 
 ## Resources
-- Repository: https://github.com/jajimer/sinergym/
-- Documentation: https://jajimer.github.io/sinergym/
+- Repository: <https://github.com/jajimer/sinergym/>
+- Documentation: <https://jajimer.github.io/sinergym/>
 
 ## Licensing
 
