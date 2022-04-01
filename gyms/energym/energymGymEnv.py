@@ -1,5 +1,6 @@
 """Module with wrapper for Energym gym that makes it compatible with OpenAI gym."""
 
+import warnings
 import gym
 import numpy as np
 import energym
@@ -225,6 +226,9 @@ class EnergymGymEnv(gym.Env):
         self.observation_space = observation_space
         self.reward_range = (-float("inf"), 0)
 
+        # set attribute whether first reset done
+        self._first_reset_done = False
+
     def step(self, action: np.array) -> Tuple[np.array, float, bool, dict]:
         """
         Takes action in Gym format, converts to Energym format and advances
@@ -279,7 +283,27 @@ class EnergymGymEnv(gym.Env):
             obs (dict):
                 first observation from reset environment
         """
-        self.env.reset()
+
+        # Prevent resetting Energym env twice on first call of reset()
+        # as this appears to cause long simulations to run before resetting.
+        # The issue is discussed here:
+        # https://github.com/rdnfn/beobench/issues/43
+        if self._first_reset_done:
+            # on second or later reset, reset Energym env (but with warning)
+            warnings.warn(
+                (
+                    "reset() method of Energym env called more than once. "
+                    "This may result in unexpected behaviour. "
+                    "For more info see: https://github.com/rdnfn/beobench/issues/43"
+                )
+            )
+            self.env.reset()
+        else:
+            # On first reset call, skip resetting Energym env as the environment should
+            # be just have been reset/initialized on creation.
+            self._first_reset_done = True
+
+        # Get observation
         obs = self.env.get_output()
         obs = self.obs_converter(obs)
 
