@@ -97,6 +97,7 @@ class EnergymGymEnv(gym.Env):
         discretize=False,
         discrete_bins=30,
         ignore_reset=False,
+        populate_info=True,
     ):
 
         super().__init__()
@@ -121,6 +122,7 @@ class EnergymGymEnv(gym.Env):
         self.temps = list(filter(lambda t: match("Z\d\d_T", t), self.obs_keys))
         self.power = ["Fa_Pw_All"]
         self.ignore_reset = ignore_reset
+        self.populate_info = populate_info
 
         self.cont_actions = []
         self.discrete_actions = []
@@ -268,8 +270,19 @@ class EnergymGymEnv(gym.Env):
         # convert energym output observation to obs vector compatible with rllib
         conv_obs = self.obs_converter(observations)
 
-        # create info with original observations
-        info = {"original_obs": observations}
+        if self.populate_info:
+            # create info with original observations
+            flattened_acts = {
+                key: (
+                    value[0]
+                    if not isinstance(value[0], (list, np.ndarray))
+                    else value[0][0]
+                )
+                for key, value in action.items()
+            }
+            info = {"obs": observations, "acts": flattened_acts}
+        else:
+            info = {}
 
         return conv_obs, reward, done, info
 
