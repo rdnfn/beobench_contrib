@@ -264,12 +264,12 @@ class EnergymGymEnv(gym.Env):
         reward = self.compute_reward(observations)
 
         # convert energym output observation to obs vector compatible with rllib
-        observations = self.obs_converter(observations)
+        conv_obs = self.obs_converter(observations)
 
-        # create dummy info variable, TBC what output we pass to user
-        info = {}
+        # create info with original observations
+        info = {"original_obs": observations}
 
-        return observations, reward, done, info
+        return conv_obs, reward, done, info
 
     def render(self):
         pass
