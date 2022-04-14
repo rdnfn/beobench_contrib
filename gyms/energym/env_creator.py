@@ -21,7 +21,7 @@ def create_env(env_config: dict = None) -> gym.Env:
         "SeminarcenterThermostat-v0": 10,
         "Apartments2Thermal-v0": 3,
         "MixedUseFanFCU-v0": 15,
-        # add remaining envs
+        # TODO add remaining envs
     }
 
     if not env_config:
@@ -34,6 +34,7 @@ def create_env(env_config: dict = None) -> gym.Env:
                 "step_period": 15,
                 "normalize": True,
                 "discretize": 30,
+                "ignore_reset": False,
             },
         }
 

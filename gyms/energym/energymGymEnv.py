@@ -96,6 +96,8 @@ class EnergymGymEnv(gym.Env):
         normalize=True,
         discretize=False,
         discrete_bins=30,
+        ignore_reset=False,
+        populate_info=True,
     ):
 
         super().__init__()
@@ -119,6 +121,8 @@ class EnergymGymEnv(gym.Env):
         self.n_act = len(self.act_keys)
         self.temps = list(filter(lambda t: match("Z\d\d_T", t), self.obs_keys))
         self.power = ["Fa_Pw_All"]
+        self.ignore_reset = ignore_reset
+        self.populate_info = populate_info
 
         self.cont_actions = []
         self.discrete_actions = []
@@ -264,12 +268,23 @@ class EnergymGymEnv(gym.Env):
         reward = self.compute_reward(observations)
 
         # convert energym output observation to obs vector compatible with rllib
-        observations = self.obs_converter(observations)
+        conv_obs = self.obs_converter(observations)
 
-        # create dummy info variable, TBC what output we pass to user
-        info = {}
+        if self.populate_info:
+            # create info with original observations
+            flattened_acts = {
+                key: (
+                    value[0]
+                    if not isinstance(value[0], (list, np.ndarray))
+                    else value[0][0]
+                )
+                for key, value in action.items()
+            }
+            info = {"obs": observations, "acts": flattened_acts}
+        else:
+            info = {}
 
-        return observations, reward, done, info
+        return conv_obs, reward, done, info
 
     def render(self):
         pass
@@ -283,12 +298,15 @@ class EnergymGymEnv(gym.Env):
             obs (dict):
                 first observation from reset environment
         """
+        print(
+            f"Beobench: resetting environment. First reset completed: {self._first_reset_done}"
+        )
 
         # Prevent resetting Energym env twice on first call of reset()
         # as this appears to cause long simulations to run before resetting.
         # The issue is discussed here:
         # https://github.com/rdnfn/beobench/issues/43
-        if self._first_reset_done:
+        if self._first_reset_done and not self.ignore_reset:
             # on second or later reset, reset Energym env (but with warning)
             warnings.warn(
                 (
