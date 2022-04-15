@@ -295,6 +295,8 @@ class EnergymGymEnv(gym.Env):
         else:
             info = {}
 
+        self.total_num_steps += 1
+
         return conv_obs, reward, done, info
 
     def render(self):
