@@ -1,0 +1,1 @@
+FROM alejandrocn7/sinergym:v1.7.0
