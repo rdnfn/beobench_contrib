@@ -440,6 +440,9 @@ class EnergymGymEnv(gym.Env):
                 action[key] = [
                     self.val_bins_act[key][action[key]]
                 ]  # index bins vals given action selected
+        else:
+            for key in self.cont_actions:
+                action[key] = [action[key]]
 
         return action
 
