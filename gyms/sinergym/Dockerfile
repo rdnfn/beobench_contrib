@@ -20,6 +20,9 @@ ARG ENERGYPLUS_SHA=de239b2e5f
 # Argument for Sinergym extras libraries
 ARG SINERGYM_EXTRAS=[extras]
 
+# Argument for choose Python version
+ARG PYTHON_VERSION=3.9
+
 ENV ENERGYPLUS_VERSION=$ENERGYPLUS_VERSION
 ENV ENERGYPLUS_TAG=v$ENERGYPLUS_VERSION
 ENV ENERGYPLUS_SHA=$ENERGYPLUS_SHA
@@ -45,15 +48,25 @@ RUN apt-get update \
     && echo "y\r" | ./$ENERGYPLUS_DOWNLOAD_FILENAME \
     && rm $ENERGYPLUS_DOWNLOAD_FILENAME \
     && cd /usr/local/EnergyPlus-$ENERGYPLUS_INSTALL_VERSION \
-    && rm -rf DataSets Documentation ExampleFiles WeatherData MacroDataSets PostProcess/convertESOMTRpgm \
-    PostProcess/EP-Compare PreProcess/FMUParser PreProcess/ParametricPreProcessor PreProcess/IDFVersionUpdater
+    && rm -rf PostProcess/EP-Compare PreProcess/FMUParser PreProcess/ParametricPreProcessor PreProcess/IDFVersionUpdater
 
 # Remove the broken symlinks
 RUN cd /usr/local/bin find -L . -type l -delete
 
-# Install Python
-RUN apt-get update && echo "Y\r" | apt-get install python3.6 && echo "Y\r" | apt-get install python3-pip
+# Install ping dependency
+RUN apt update && apt install iputils-ping -y
 
+# Install Python version PYTHON_VERSION
+RUN apt update \
+    && apt install software-properties-common -y \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt install python${PYTHON_VERSION} python${PYTHON_VERSION}-distutils -y \
+    && apt install python3-pip -y \
+    && ln -s /usr/bin/pip3 /usr/bin/pip \
+    && ln -s /usr/bin/python${PYTHON_VERSION} /usr/bin/python
+
+# Install enchant for sinergym documentation
+RUN apt-get update && echo "Y\r" | apt-get install enchant --fix-missing -y
 # Install OpenJDK-8
 RUN apt-get update && echo "Y\r" | apt-get install default-jre openjdk-8-jdk
 
@@ -65,33 +78,44 @@ RUN apt-get install wget \
     && cp -R 1/ $BCVTB_PATH && rm -R 1/
 
 # Working directory and copy files
-RUN pip3 install --upgrade pip
+RUN python -m pip install --upgrade pip
+# Upgrade setuptools for possible errors (depending on python version)
+RUN pip install --upgrade setuptools
 RUN apt-get update && apt-get upgrade -y && apt-get install -y git
 
-# End of copy from dockerfile in sinergym repo
+# CUSTOM BEOBENCH
+# remove copies based on sinergym repo build context
+# replaced with repo clone step
+RUN git clone https://github.com/jajimer/sinergym.git
 
-# Custom beobench code
+WORKDIR /sinergym
+#COPY requirements.txt .
+#COPY MANIFEST.in .
+#COPY setup.py .
+#COPY DRL_battery.py .
+#COPY load_agent.py .
+#COPY sinergym /sinergym/sinergym
+#COPY tests /sinergym/tests
+#COPY examples /sinergym/examples
+#COPY check_run_times.py .
+#COPY try_env.py .
 
-# Make python 3.6 default
-RUN ln -s /usr/bin/python3.6 /usr/bin/python
+RUN pip install -e .${SINERGYM_EXTRAS}
 
-# Installing sinergym from GitHub
-#
-# Note that sinergym currently needs to be installed from cloned repo,
-# likely because sinergym's setup.py does not specify package names.
-# The -e option ensures that the entire package path is added to the
-# PYTHONPATH to address the above problem.
-RUN mkdir -p /opt/beobench/ \
-    && cd /opt/beobench/ \
-    && git clone https://github.com/jajimer/sinergym.git \
-    && cd sinergym && python3 -m pip install -e .
 
-# Fixes
+#uninstall 3.6 python default version
+RUN apt-get remove --purge python3-pip python3 -y \
+    && apt-get autoremove -y && apt-get autoclean -y
+RUN pip install idna
+CMD ["/bin/bash"]
 
-# Fix for click encoding problem
-ENV LC_ALL=C.UTF-8
-ENV LANG=C.UTF-8
+# Build: docker build -t sinergym:1.1.0 --build-arg ENERGYPLUS_VERSION=9.5.0 --build-arg ENERGYPLUS_INSTALL_VERSION=9-5-0 --build-arg ENERGYPLUS_SHA=de239b2e5f .
+# Run: docker run -it --rm -p 5005:5005 sinergym:1.1.0
 
-# Fix for missing stable baselines dependency
-RUN python3 -m pip --disable-pip-version-check --no-cache-dir install stable-baselines3
-RUN python3 -m pip --disable-pip-version-check --no-cache-dir install importlib-resources
+# CUSTOM BEOBENCH
+# Fix for those packages that get installed by pip into
+# '/usr/lib/python3.9/site-packages/'
+# and not '/usr/local/lib/python3.9/dist-packages' like most packages.
+# This applies to 'promise' package for example.
+# For more info see https://stackoverflow.com/q/9387928.
+ENV PYTHONPATH "${PYTHONPATH}:/usr/lib/python3.9/site-packages/"

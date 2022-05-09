@@ -1,0 +1,9 @@
+env:
+  gym: ./sinergym_minimal/
+  config:
+    name: Eplus-5Zone-hot-continuous-v1
+agent:
+  origin: random_action
+  config:
+    stop:
+      timesteps_total: 480

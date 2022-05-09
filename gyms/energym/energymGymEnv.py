@@ -91,13 +91,14 @@ class EnergymGymEnv(gym.Env):
     def __init__(
         self,
         env,
-        max_episode_length=35040,
-        step_period=15,
-        normalize=True,
-        discretize=False,
-        discrete_bins=30,
-        ignore_reset=False,
-        populate_info=True,
+        max_episode_length: int = 35040,
+        step_period: int = 15,
+        normalize: bool = True,
+        discretize: bool = False,
+        discrete_bins: int = 30,
+        ignore_reset: bool = False,
+        populate_info: bool = True,
+        power_in_reward: list = None,
     ):
 
         super().__init__()
@@ -120,7 +121,10 @@ class EnergymGymEnv(gym.Env):
         self.obs_keys = [key for key in self.env.get_outputs_names()]
         self.n_act = len(self.act_keys)
         self.temps = list(filter(lambda t: match("Z\d\d_T", t), self.obs_keys))
-        self.power = ["Fa_Pw_All"]
+        if power_in_reward is None:
+            self.power = ["Fa_Pw_All"]
+        else:
+            self.power = power_in_reward
         self.ignore_reset = ignore_reset
         self.populate_info = populate_info
 
@@ -233,6 +237,9 @@ class EnergymGymEnv(gym.Env):
         # set attribute whether first reset done
         self._first_reset_done = False
 
+        # total num of steps
+        self.total_num_steps = 0
+
     def step(self, action: np.array) -> Tuple[np.array, float, bool, dict]:
         """
         Takes action in Gym format, converts to Energym format and advances
@@ -280,9 +287,15 @@ class EnergymGymEnv(gym.Env):
                 )
                 for key, value in action.items()
             }
-            info = {"obs": observations, "acts": flattened_acts}
+            info = {
+                "obs": observations,
+                "acts": flattened_acts,
+                "time": {"days": self.total_num_steps * self.step_period / 1440},
+            }
         else:
             info = {}
+
+        self.total_num_steps += 1
 
         return conv_obs, reward, done, info
 
@@ -298,9 +311,6 @@ class EnergymGymEnv(gym.Env):
             obs (dict):
                 first observation from reset environment
         """
-        print(
-            f"Beobench: resetting environment. First reset completed: {self._first_reset_done}"
-        )
 
         # Prevent resetting Energym env twice on first call of reset()
         # as this appears to cause long simulations to run before resetting.
@@ -316,6 +326,7 @@ class EnergymGymEnv(gym.Env):
                 )
             )
             self.env.reset()
+            self.total_num_steps = 0
         else:
             # On first reset call, skip resetting Energym env as the environment should
             # be just have been reset/initialized on creation.
@@ -429,6 +440,9 @@ class EnergymGymEnv(gym.Env):
                 action[key] = [
                     self.val_bins_act[key][action[key]]
                 ]  # index bins vals given action selected
+        else:
+            for key in self.cont_actions:
+                action[key] = [action[key]]
 
         return action
 
@@ -467,7 +481,8 @@ class EnergymGymEnv(gym.Env):
                 )
 
         # energy term in reward
-        energy = -(observation[self.power[0]] * (self.step_period / 60)) / 1000  # kWh
+        power = sum(observation[pw] for pw in self.power)
+        energy = -(power * (self.step_period / 60)) / 1000  # kWh
 
         reward = energy + discomfort
 
