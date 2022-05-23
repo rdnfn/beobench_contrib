@@ -17,7 +17,8 @@ except ImportError as error:
         )
     ) from error
 
-from beobench.constants import DEFAULT_INSTALL_PATH
+
+DEFAULT_INSTALL_PATH = pathlib.Path("/opt/beobench")
 
 
 def build_testcase(
