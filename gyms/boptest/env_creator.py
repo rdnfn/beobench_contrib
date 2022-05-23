@@ -18,12 +18,8 @@ except ImportError as error:
     ) from error
 
 
-DEFAULT_INSTALL_PATH = pathlib.Path("/opt/beobench")
-
-
 def build_testcase(
     testcase: str = "testcase1",
-    install_path: pathlib.Path = DEFAULT_INSTALL_PATH,
 ) -> None:
     """Build a docker image for a BOPTEST testcase.
 
@@ -31,27 +27,22 @@ def build_testcase(
 
     Args:
         testcase (str, optional): testcase name. Defaults to "testcase1".
-        install_path (pathlib.Path, optional): path of beobench installation.
-            Defaults to DEFAULT_INSTALL_PATH.
     """
 
     subprocess.check_call(
         ["make", "build", f"TESTCASE={testcase}"],
-        cwd=_get_boptest_path(install_path),
+        cwd=_get_boptest_path(),
     )
 
 
 def run_testcase(
     testcase: str = "testcase1",
-    install_path: pathlib.Path = DEFAULT_INSTALL_PATH,
     add_wait_time: bool = True,
 ) -> str:
     """Run BOPTEST testcase docker image.
 
     Args:
         testcase (str, optional): testcase to run. Defaults to "testcase1".
-        install_path (pathlib.Path, optional): path of beobench installation.
-            Defaults to DEFAULT_INSTALL_PATH.
         add_wait_time (bool, optional): wether to add some wait time for
             API in container to get ready. This is useful when after this
             command the API is immidiately accessed. Defaults to True.
@@ -89,7 +80,7 @@ def run_testcase(
 
     subprocess.check_call(
         args,
-        cwd=_get_boptest_path(install_path),
+        cwd=_get_boptest_path(),
     )
 
     if add_wait_time:
@@ -122,16 +113,13 @@ def stop_container(container_name: str) -> None:
     container.stop(timeout=0)
 
 
-def _get_boptest_path(install_path: pathlib.Path) -> pathlib.Path:
+def _get_boptest_path() -> pathlib.Path:
     """Get BOPTEST path from beobench install path.
-
-    Args:
-        install_path (str): path of beobench installation.
 
     Returns:
         pathlib.Path: path to BOPTEST installation.
     """
-    return install_path / "boptest"
+    return pathlib.Path("/opt/beobench/boptest")
 
 
 def create_env(env_config: dict = None) -> boptest_gym.BoptestGymEnv:
@@ -159,8 +147,14 @@ def create_env(env_config: dict = None) -> boptest_gym.BoptestGymEnv:
             "normalize": True,
         }
 
-    container_name, url = run_testcase(env_config["boptest_testcase"])
-    print("cname", container_name)
+    testcase = env_config["boptest_testcase"]
+
+    # Build testcase container
+    build_testcase(testcase)
+
+    # Run test case in prev. built container
+    container_name, url = run_testcase(testcase)
+
     env = boptest_gym.BoptestGymEnv(url=url, **env_config["gym_kwargs"])
 
     # ensure that the container is stopped once env closed
