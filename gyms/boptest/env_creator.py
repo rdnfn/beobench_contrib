@@ -135,7 +135,7 @@ def create_env(env_config: dict = None) -> boptest_gym.BoptestGymEnv:
 
     if not env_config:
         env_config = {
-            "boptest_testcase": "bestest_hydronic_heat_pump",
+            "name": "bestest_hydronic_heat_pump",
             "gym_kwargs": {
                 "actions": ["oveHeaPumY_u"],
                 "observations": {"reaTZon_y": (280.0, 310.0)},
@@ -147,7 +147,7 @@ def create_env(env_config: dict = None) -> boptest_gym.BoptestGymEnv:
             "normalize": True,
         }
 
-    testcase = env_config["boptest_testcase"]
+    testcase = env_config["name"]
 
     # Build testcase container
     build_testcase(testcase)
