@@ -26,7 +26,7 @@ def create_env(env_config: dict = None) -> gym.Env:
 
     if not env_config:
         env_config = {
-            "energym_environment": "MixedUseFanFCU-v0",
+            "name": "MixedUseFanFCU-v0",
             "weather": "GRC_A_Athens",
             "days": 365,
             "gym_kwargs": {
@@ -40,7 +40,7 @@ def create_env(env_config: dict = None) -> gym.Env:
 
     # build energym environment
     env = energym.make(
-        env_config["energym_environment"],
+        env_config["name"],
         weather=env_config["weather"],
         simulation_days=env_config["days"],
     )
