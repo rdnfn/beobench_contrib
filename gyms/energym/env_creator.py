@@ -33,7 +33,7 @@ def create_env(env_config: dict = None) -> gym.Env:
                 "max_episode_length": 35040,
                 "step_period": 15,
                 "normalize": True,
-                "discretize": 30,
+                "discretize": False,  # if not False, add number
                 "ignore_reset": False,
             },
         }
