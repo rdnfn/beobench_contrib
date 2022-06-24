@@ -4,7 +4,7 @@ import gym
 import sinergym
 import sinergym.utils.wrappers
 
-from sinergym.utils.common import RANGES_5ZONE, RANGES_IW, RANGES_DATACENTER
+from sinergym.utils.constants import RANGES_5ZONE, RANGES_IW, RANGES_DATACENTER
 
 
 def create_env(env_config: dict = None) -> gym.Env:
