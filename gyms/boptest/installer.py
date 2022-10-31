@@ -22,6 +22,7 @@ BOPTEST_PIP_DEP = [
     "flask-restful==0.3.9",
     "pandas==1.3.4",
     "flask_cors==3.0.10",
+    "gym==0.21",  # last version of gym without API changes
     # BOPTEST gym cannot be added as a direct or extra
     # dependency in setup.py because pypi does not accept
     # such direct dependencies. Therefore it is installed
