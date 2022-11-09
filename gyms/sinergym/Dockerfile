@@ -86,7 +86,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y git
 # CUSTOM BEOBENCH
 # remove copies based on sinergym repo build context
 # replaced with repo clone step
-RUN git clone https://github.com/jajimer/sinergym.git
+RUN git clone https://github.com/jajimer/sinergym.git --branch=v1.9.5
 
 WORKDIR /sinergym
 #COPY requirements.txt .
