@@ -4,7 +4,12 @@ import gym
 import sinergym
 import sinergym.utils.wrappers
 
-from sinergym.utils.constants import RANGES_5ZONE, RANGES_IW, RANGES_DATACENTER
+from sinergym.utils.constants import (
+    RANGES_5ZONE,
+    RANGES_DATACENTER,
+    RANGES_WAREHOUSE,
+    RANGES_OFFICE,
+)
 
 
 def create_env(env_config: dict = None) -> gym.Env:
@@ -35,8 +40,10 @@ def create_env(env_config: dict = None) -> gym.Env:
             ranges = RANGES_DATACENTER
         elif env_type == "5Zone":
             ranges = RANGES_5ZONE
-        elif env_type == "IWMullion":
-            ranges = RANGES_IW
+        elif env_type == "warehouse":
+            ranges = RANGES_WAREHOUSE
+        elif env_type == "office":
+            ranges = RANGES_OFFICE
         else:
             raise NameError(f"env_type {env_type} is not valid, check environment name")
         env = sinergym.utils.wrappers.NormalizeObservation(env, ranges=ranges)
