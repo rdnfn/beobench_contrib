@@ -390,7 +390,7 @@ class EnergymGymEnv(gym.Env):
                 )
 
         # convert to ndarray
-        # observation = np.array(list(observation.values()), dtype=np.float).reshape(len(observation.values()), )
+        # observation = np.array(list(observation.values()), dtype=np.float32).reshape(len(observation.values()), )
 
         return obs
 
@@ -446,7 +446,7 @@ class EnergymGymEnv(gym.Env):
 
         return action
 
-    def compute_reward(self, observation: dict) -> np.float:
+    def compute_reward(self, observation: dict) -> np.float32:
         """
         Compute reward given observation at current timestep.
 
@@ -454,7 +454,7 @@ class EnergymGymEnv(gym.Env):
             observation (dict): Dictionary of observation from energym simulation
 
         Returns:
-            reward (np.float): Scalar reward from environment
+            reward (np.float32): Scalar reward from environment
 
         Notes
         -----
@@ -486,7 +486,7 @@ class EnergymGymEnv(gym.Env):
 
         reward = energy + discomfort
 
-        return np.float(reward)
+        return np.float32(reward)
 
     def compute_done(self, observation: dict):
         """
